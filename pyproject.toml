@@ -1,0 +1,10 @@
+[project]
+name = "gitdash"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "polyagent[fastapi]>=1.2.1",
+]
