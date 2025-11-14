@@ -72,6 +72,9 @@ async def refresh_dashboard(limit: int = None):
     if not os.getenv("GITHUB_TOKEN"):
         raise HTTPException(status_code=500, detail="GITHUB_TOKEN not set")
 
+    # Update agent's as_of time to current time
+    commit_agent.as_of = datetime.now()
+
     # Fetch repos
     repos = await github_client.get_repos(limit=limit)
 
