@@ -62,7 +62,7 @@ class GitHubClient:
                 "name": repo["name"],
                 "owner": repo["owner"]["login"],
                 "language": repo["language"],
-                "updated_at": repo["updated_at"],
+                "updated_at": repo["pushed_at"],  # Use pushed_at to detect commits on all branches
             })
         return result
 
