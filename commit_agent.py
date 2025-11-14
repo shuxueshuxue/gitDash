@@ -2,7 +2,7 @@
 CommitAgent - Manages commit caching and AI summary generation.
 """
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from pydantic import BaseModel, Field
 from polycli import PolyAgent
@@ -42,11 +42,21 @@ class CommitAgent:
             updated_at = repo["updated_at"]
 
             # Check if we need to fetch
+            # Parse timestamps as timezone-aware datetime objects for proper comparison
             needs_fetch = True
             if repo_id in self.cache:
-                last_fetched = self.cache[repo_id].get("last_fetched")
-                if last_fetched and updated_at <= last_fetched:
-                    needs_fetch = False
+                last_fetched_str = self.cache[repo_id].get("last_fetched")
+                if last_fetched_str:
+                    # Parse both timestamps to timezone-aware datetime objects
+                    updated_at_dt = datetime.fromisoformat(updated_at.replace('Z', '+00:00'))
+                    last_fetched_dt = datetime.fromisoformat(last_fetched_str)
+                    # Convert naive local time to UTC properly
+                    if last_fetched_dt.tzinfo is None:
+                        # Assume last_fetched is in local time, convert to UTC
+                        last_fetched_dt = last_fetched_dt.astimezone(timezone.utc)
+
+                    if updated_at_dt <= last_fetched_dt:
+                        needs_fetch = False
 
             if needs_fetch:
                 try:
