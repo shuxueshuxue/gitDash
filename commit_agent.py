@@ -10,7 +10,7 @@ from polycli import PolyAgent
 
 class CommitSummary(BaseModel):
     """Structured summary of recent commits."""
-    summary: str = Field(description="1-2 sentence summary of recent development work")
+    summary: str = Field(description="3-5 keywords describing recent work, no subject, just activities (e.g., 'refactoring auth, fixing bugs, adding tests')")
     focus_areas: list[str] = Field(description="Key areas being worked on (max 3 items)")
 
 
@@ -49,30 +49,40 @@ class CommitAgent:
                     needs_fetch = False
 
             if needs_fetch:
-                print(f"Fetching commits for {repo['name']}...")
-                # Only fetch last 30 days (our longest window) from most recent branch
-                since = self.as_of - timedelta(days=30)
-                commits = await self.github.get_commits(
-                    owner=repo["owner"],
-                    repo=repo["name"],
-                    since=since,
-                    per_page=100,
-                    use_most_recent_branch=True
-                )
+                try:
+                    print(f"Fetching commits for {repo['name']}...")
+                    # Only fetch last 30 days (our longest window) from most recent branch
+                    since = self.as_of - timedelta(days=30)
+                    commits = await self.github.get_commits(
+                        owner=repo["owner"],
+                        repo=repo["name"],
+                        since=since,
+                        per_page=100,
+                        use_most_recent_branch=True
+                    )
 
-                # Store in cache
-                self.cache[repo_id] = {
-                    "commits": commits,
-                    "last_fetched": self.as_of.isoformat(),
-                    "summary": None,
-                    "summary_at": None,
-                }
+                    # Store in cache
+                    self.cache[repo_id] = {
+                        "commits": commits,
+                        "last_fetched": self.as_of.isoformat(),
+                        "summary": None,
+                        "summary_at": None,
+                    }
 
-                # Generate AI summary for recent commits
-                if commits:
-                    summary = await self._generate_summary(repo["name"], commits[:5])
-                    self.cache[repo_id]["summary"] = summary
-                    self.cache[repo_id]["summary_at"] = self.as_of.isoformat()
+                    # Generate AI summary for recent commits
+                    if commits:
+                        summary = await self._generate_summary(repo["name"], commits[:5])
+                        self.cache[repo_id]["summary"] = summary
+                        self.cache[repo_id]["summary_at"] = self.as_of.isoformat()
+                except Exception as e:
+                    print(f"  Error fetching {repo['name']}: {str(e)}")
+                    # Store empty cache entry so we don't retry immediately
+                    self.cache[repo_id] = {
+                        "commits": [],
+                        "last_fetched": self.as_of.isoformat(),
+                        "summary": f"Error: {str(e)[:50]}",
+                        "summary_at": self.as_of.isoformat(),
+                    }
 
     async def _generate_summary(self, repo_name: str, recent_commits: list[dict]) -> str:
         """
@@ -95,7 +105,7 @@ class CommitAgent:
 
         prompt = f"""{commit_text}
 
-Analyze these commits and provide a summary."""
+Provide 3-5 keywords describing the work, no subject term. Example: "fixing UI bugs, refactoring auth, adding tests" """
 
         try:
             result = self.ai.run(

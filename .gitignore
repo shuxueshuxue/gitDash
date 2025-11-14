@@ -11,3 +11,6 @@ wheels/
 
 # Runtime cache
 cache.json
+
+# API keys and secrets
+models.json

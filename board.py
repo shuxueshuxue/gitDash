@@ -8,11 +8,13 @@ from typing import TypedDict
 class ProjectRow(TypedDict):
     """Dashboard row for a single project."""
     project: str
+    url: str
     commit_count_3d: int
     commit_count_30d: int
     language: str
     working_state: str
     loc: int  # Future: lines of code
+    weight: int  # Activity weight: 5 * 3d + 30d
 
 
 class Board:
@@ -44,15 +46,23 @@ class Board:
             repo_id = repo["id"]
             commits = self.agent.get_commits(repo_id)
 
+            count_3d = self._count_commits_in_window(commits, days=3)
+            count_30d = self._count_commits_in_window(commits, days=30)
+
             row: ProjectRow = {
                 "project": repo["name"],
-                "commit_count_3d": self._count_commits_in_window(commits, days=3),
-                "commit_count_30d": self._count_commits_in_window(commits, days=30),
+                "url": f"https://github.com/{repo['owner']}/{repo['name']}",
+                "commit_count_3d": count_3d,
+                "commit_count_30d": count_30d,
                 "language": repo["language"] or "N/A",
                 "working_state": self.agent.get_summary(repo_id),
                 "loc": 0,  # Placeholder for future implementation
+                "weight": 5 * count_3d + count_30d,
             }
             projects.append(row)
+
+        # Sort by weight (descending)
+        projects.sort(key=lambda p: p["weight"], reverse=True)
 
         return projects
 
