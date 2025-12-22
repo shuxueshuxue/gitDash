@@ -2,6 +2,8 @@
 
 A personal GitHub activity dashboard with gamified tier progression and AI-powered commit summaries.
 
+Created by [shuxueshuxue](https://github.com/shuxueshuxue).
+
 ## Features
 
 ### Tier-Based Progression System
