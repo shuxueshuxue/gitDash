@@ -1,0 +1,13 @@
+{
+  "models": {
+    "claude-haiku-4.5": {
+      "endpoint": "YOUR_API_ENDPOINT",
+      "api_key": "YOUR_API_KEY",
+      "model": "anthropic/claude-haiku-4.5"
+    }
+  },
+  "default_retry": {
+    "max_retries": 3,
+    "timeout": 600
+  }
+}
